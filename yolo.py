@@ -18,7 +18,7 @@ ANNOT_DIR = os.path.join(BASE_DIR, 'dataset')
 
 class TinyYoloFeature:
     """Tiny yolo feature extractor"""
-    def __init__(self, input_size):
+    def __init__(self, input_size, config):
         input_image = Input(shape=(input_size, input_size, 3))
 
         # Layer 1
@@ -53,8 +53,7 @@ class TinyYoloFeature:
         self.feature_extractor = Model(input_image, x)
 
 
-
-        pretrained = load_model('real-world-1.h5', custom_objects={'custom_loss': dummy_loss, 'tf': tf})
+        pretrained = load_model('checkpoints\\' + config['model']['saved_model_name'], custom_objects={'custom_loss': dummy_loss, 'tf': tf})
         pretrained = pretrained.get_layer('model_1')
 
         idx = 0
@@ -110,7 +109,7 @@ class YOLO(object):
         input_image = Input(shape=(self.image_h, self.image_w, 3))
         self.true_boxes = Input(shape=(1, 1, 1, self.max_box_per_image, 4))
 
-        self.feature_extractor = TinyYoloFeature(self.image_h).feature_extractor
+        self.feature_extractor = TinyYoloFeature(self.image_h, config).feature_extractor
         features = self.feature_extractor(input_image)
 
         # Object detection layer
@@ -126,6 +125,10 @@ class YOLO(object):
 
         self.model = Model([input_image, self.true_boxes], output)
         self.model.summary()
+
+        pretrained = load_model('checkpoints\\' + config['model']['saved_model_name'], custom_objects={'custom_loss': self.custom_loss, 'tf': tf})
+        self.model.get_layer('DetectionLayer').set_weights(
+            pretrained.get_layer('DetectionLayer').get_weights())
 
 
     def load_weights(self, model_path):

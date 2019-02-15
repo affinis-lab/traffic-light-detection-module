@@ -3,7 +3,7 @@
     {
         "image_h":               416,
         "image_w":               416,
-        "anchors":               [0.24,0.75, 0.80,2.22],
+        "anchors":               [0.24,0.79, 0.80,2.12],
         "max_obj":               5,
         "grid_h":                13,
         "grid_w":                13,
@@ -11,7 +11,7 @@
         "classes":               ["go", "stop"],
         "obj_thresh":            0.20,
         "nms_thresh":            0.01,
-        "saved_model_name":      "real-world.h5",
+        "saved_model_name":      "model.101-1.84.h5",
         "obj_scale":             25,
         "no_obj_scale":          10,
         "coord_scale":           10,
@@ -21,6 +21,7 @@
     "plot_model":           true,
 
     "train": {
+        "enabled":              true,
         "annot_file_name":      "carla_all.csv",
         "batch_size":           8,
         "learning_rate":        1e-4,

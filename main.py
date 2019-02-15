@@ -13,8 +13,7 @@ def main(args):
     with open(config_path) as config_buffer:
         config = json.loads(config_buffer.read())
 
-    train = True
-    if train:
+    if config['train']['enabled']:
         yolo = YOLO(config)
         #yolo.load_weights(config['model']['saved_model_name'])
         yolo.train()
