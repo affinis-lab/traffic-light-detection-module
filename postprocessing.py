@@ -3,8 +3,8 @@ import cv2
 
 
 def bbox_iou(box1, box2):
-    intersect_w = _interval_overlap([box1.xmin, box1.xmax], [box2.xmin, box2.xmax])
-    intersect_h = _interval_overlap([box1.ymin, box1.ymax], [box2.ymin, box2.ymax])
+    intersect_w = interval_overlap([box1.xmin, box1.xmax], [box2.xmin, box2.xmax])
+    intersect_h = interval_overlap([box1.ymin, box1.ymax], [box2.ymin, box2.ymax])
 
     intersect = intersect_w * intersect_h
 
@@ -14,6 +14,7 @@ def bbox_iou(box1, box2):
     union = w1 * h1 + w2 * h2 - intersect
 
     return float(intersect) / union
+
 
 def decode_netout(netout, anchors, nb_class, obj_threshold=0.3, nms_threshold=0.3):
     grid_h, grid_w, nb_box = netout.shape[:3]
@@ -66,8 +67,7 @@ def decode_netout(netout, anchors, nb_class, obj_threshold=0.3, nms_threshold=0.
     boxes = [box for box in boxes if box.get_score() > obj_threshold]
 
     boxes = sorted(boxes, key=lambda box: box.get_score(), reverse=True)
-
-    boxes = [boxes[0]]
+    if len(boxes) > 0: boxes = [boxes[0]]
     return boxes
 
 
@@ -138,7 +138,7 @@ def compute_overlap(a, b):
     return intersection / ua
 
 
-def _interval_overlap(interval_a, interval_b):
+def interval_overlap(interval_a, interval_b):
     x1, x2 = interval_a
     x3, x4 = interval_b
 
@@ -154,6 +154,33 @@ def _interval_overlap(interval_a, interval_b):
             return min(x2, x4) - x3
 
 
+def compute_ap(recall, precision):
+    """ Compute the average precision, given the recall and precision curves.
+    Code originally from https://github.com/rbgirshick/py-faster-rcnn.
+    # Arguments
+        recall:    The recall curve (list).
+        precision: The precision curve (list).
+    # Returns
+        The average precision as computed in py-faster-rcnn.
+    """
+    # correct AP calculation
+    # first append sentinel values at the end
+    mrec = np.concatenate(([0.], recall, [1.]))
+    mpre = np.concatenate(([0.], precision, [0.]))
+
+    # compute the precision envelope
+    for i in range(mpre.size - 1, 0, -1):
+        mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+
+    # to calculate area under PR curve, look for points
+    # where X axis (recall) changes value
+    i = np.where(mrec[1:] != mrec[:-1])[0]
+
+    # and sum (\Delta recall) * prec
+    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+    return ap
+
+
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
 
@@ -167,6 +194,7 @@ def _softmax(x, axis=-1, t=-100.):
     e_x = np.exp(x)
 
     return e_x / e_x.sum(axis, keepdims=True)
+
 
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, c=None, classes=None):

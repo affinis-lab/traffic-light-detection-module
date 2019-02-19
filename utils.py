@@ -6,7 +6,7 @@ import os
 from imgaug import augmenters as iaa
 from sklearn.preprocessing import LabelEncoder
 
-from postprocessing import _interval_overlap
+from postprocessing import interval_overlap
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -16,8 +16,8 @@ IMAGES_DIR = os.path.join(BASE_DIR, 'dataset', 'images')
 def bbox_iou(box1, box2):
     # 0   ,1   ,2   ,3
     # xmin,ymin,xmax,ymax
-    intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
-    intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
+    intersect_w = interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
+    intersect_h = interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
 
     intersect = intersect_w * intersect_h
 
@@ -149,7 +149,7 @@ class BatchGenerator(keras.utils.Sequence):
         instance_num = 0
 
         for instance in current_batch:
-            img, object_annotations = self.aug_image(instance, jitter=self.jitter)
+            img, object_annotations = self.prep_image_and_annot(instance, jitter=self.jitter)
 
             obj_num = 0
 
@@ -209,7 +209,7 @@ class BatchGenerator(keras.utils.Sequence):
         return [x_batch, b_batch], y_batch
 
 
-    def aug_image(self, dataset_instance, jitter):
+    def prep_image_and_annot(self, dataset_instance, jitter):
         image_path = dataset_instance['image_path']
         image = self.load_image(os.path.join(IMAGES_DIR,image_path))
 

@@ -1,13 +1,13 @@
 from keras.models import Model, load_model
 from keras.layers import Reshape, Lambda, Conv2D, Input, MaxPooling2D, BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
-from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, Callback
 from keras.optimizers import SGD, Adam, RMSprop
 import tensorflow as tf
 import os
 import numpy as np
 
-from postprocessing import decode_netout
+from postprocessing import decode_netout, interval_overlap, compute_overlap, compute_ap
 from preprocessing import load_image_predict, load_carla_data
 from utils import BatchGenerator
 
@@ -156,7 +156,7 @@ class YOLO(object):
 
         np.random.shuffle(data)
 
-        train_instances, validation_instances = data[:1500], data[1500:]
+        train_instances, validation_instances = data[:1655], data[1655:]
 
         np.random.shuffle(train_instances)
         np.random.shuffle(validation_instances)
@@ -167,6 +167,15 @@ class YOLO(object):
         checkpoint = ModelCheckpoint(
             'checkpoints\\model.{epoch:02d}-{val_loss:.2f}.h5',
             monitor='val_loss',
+            verbose=1,
+            save_best_only=True,
+            mode='auto',
+            period=1
+        )
+
+        checkpoint_all = ModelCheckpoint(
+            'checkpoints\\all_models.{epoch:02d}-{loss:.2f}.h5',
+            monitor='loss',
             verbose=1,
             save_best_only=True,
             mode='auto',
@@ -187,9 +196,39 @@ class YOLO(object):
                                       verbose=1,
                                       validation_data=validation_generator,
                                       validation_steps=len(validation_generator),
-                                      callbacks=[checkpoint],# map_evaluator_cb],  # checkpoint, tensorboard
-                                      max_queue_size=8
+                                      callbacks=[checkpoint, checkpoint_all],# map_evaluator_cb],  # checkpoint, tensorboard
+                                      max_queue_size=10,
+                                      workers=3
                                       )
+
+
+    def evaluate(self):
+        data = load_carla_data(os.path.join(ANNOT_DIR, self.config['train']['annot_file_name']),
+                               self.config['model']['classes'])
+
+        np.random.shuffle(data)
+
+        validation_instances = data#[1400:]
+
+        validation_generator = BatchGenerator(self.config, validation_instances, jitter=False)
+
+        map_evaluator_cb = self.MAP_evaluation(self, validation_generator,
+                                               save_best=True,
+                                               save_name='checkpoints\\best-mAP.h5',
+                                               # os.path.join(BASE_DIR,'best_mAP\\weights.{epoch:02d}-{val_loss:.2f}.h5'),
+                                               tensorboard=None,
+                                               iou_threshold=0.4)
+
+        self.model.compile(loss=self.custom_loss, optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0005))
+
+        self.model.summary()
+
+        history = self.model.fit_generator(generator=validation_generator,
+                                           steps_per_epoch=len(validation_generator),
+                                           epochs=1,
+                                           verbose=1,
+                                           callbacks=[map_evaluator_cb]
+                                           )
 
 
     def normalize(self, image):
@@ -375,6 +414,179 @@ class YOLO(object):
 
 
         return loss
+
+
+    class MAP_evaluation(Callback):
+        """ Evaluate a given dataset using a given model.
+            code originally from https://github.com/fizyr/keras-retinanet
+            # Arguments
+                generator       : The generator that represents the dataset to evaluate.
+                model           : The model to evaluate.
+                iou_threshold   : The threshold used to consider when a detection is positive or negative.
+                score_threshold : The score confidence threshold to use for detections.
+                save_path       : The path to save images with visualized detections to.
+            # Returns
+                A dict mapping class names to mAP scores.
+        """
+
+        def __init__(self,
+                     yolo,
+                     generator,
+                     iou_threshold=0.5,
+                     score_threshold=0.3,
+                     save_path=None,
+                     period=1,
+                     save_best=False,
+                     save_name=None,
+                     tensorboard=None):
+
+            self.yolo = yolo
+            self.generator = generator
+            self.iou_threshold = iou_threshold
+            self.save_path = save_path
+            self.period = period
+            self.save_best = save_best
+            self.save_name = save_name
+            self.tensorboard = tensorboard
+
+            self.bestMap = 0
+
+            self.model = self.yolo.model
+
+            if not isinstance(self.tensorboard, TensorBoard) and self.tensorboard is not None:
+                raise ValueError("Tensorboard object must be a instance from keras.callbacks.TensorBoard")
+
+
+        def on_epoch_end(self, epoch, logs={}):
+            print(epoch)
+            #% self.period == 0 and self.period != 0:
+            mAP, average_precisions = self.evaluate_mAP()
+            print('\n')
+            for label, average_precision in average_precisions.items():
+                print(self.yolo.labels[label], '{:.4f}'.format(average_precision))
+            print('mAP: {:.4f}'.format(mAP))
+
+            if self.save_best and self.save_name is not None and mAP > self.bestMap:
+                print(
+                    "mAP improved from {} to {}, saving model to {}.".format(self.bestMap, mAP, self.save_name))
+                self.bestMap = mAP
+                print(self.save_name)
+                self.model.save(self.save_name)
+                self.model.save_weights('checkpoints\\best-mAP.h5')
+            else:
+                print("mAP did not improve from {}.".format(self.bestMap))
+
+            if self.tensorboard is not None and self.tensorboard.writer is not None:
+                import tensorflow as tf
+                summary = tf.Summary()
+                summary_value = summary.value.add()
+                summary_value.simple_value = mAP
+                summary_value.tag = "val_mAP"
+                self.tensorboard.writer.add_summary(summary, epoch)
+
+
+        def evaluate_mAP(self):
+            average_precisions = self._calc_avg_precisions()
+            mAP = sum(average_precisions.values()) / len(average_precisions)
+
+            return mAP, average_precisions
+
+
+        def _calc_avg_precisions(self):
+            # gather all detections and annotations
+            all_detections = [[None for i in range(self.generator.num_classes())] for j in
+                              range(self.generator.size())]
+            all_annotations = [[None for i in range(self.generator.num_classes())] for j in
+                               range(self.generator.size())]
+
+            for i in range(self.generator.size()):
+                raw_image = self.generator.load_image(self.generator.dataset[i]['image_path'])
+                raw_height, raw_width, _ = raw_image.shape
+                # make the boxes and the labels
+                pred_boxes = self.yolo.predict(os.path.join(ANNOT_DIR, 'images', self.generator.dataset[i]['image_path']))
+
+                score = np.array([box.score for box in pred_boxes])
+                pred_labels = np.array([box.label for box in pred_boxes])
+
+                if len(pred_boxes) > 0:
+                    pred_boxes = np.array([[box.xmin * raw_width, box.ymin * raw_height, box.xmax * raw_width,
+                                            box.ymax * raw_height, box.score] for box in pred_boxes])
+                else:
+                    pred_boxes = np.array([[]])
+
+                    # sort the boxes and the labels according to scores
+                score_sort = np.argsort(-score)
+                pred_labels = pred_labels[score_sort]
+                pred_boxes = pred_boxes[score_sort]
+
+                # copy detections to all_detections
+                for label in range(self.generator.num_classes()):
+                    all_detections[i][label] = pred_boxes[pred_labels == label, :]
+
+                annotations = self.generator.load_annotation(i)
+
+                # copy detections to all_annotations
+                for label in range(self.generator.num_classes()):
+                    all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
+
+            # compute mAP by comparing all detections and all annotations
+            average_precisions = {}
+
+            for label in range(self.generator.num_classes()):
+                false_positives = np.zeros((0,))
+                true_positives = np.zeros((0,))
+                scores = np.zeros((0,))
+                num_annotations = 0.0
+
+                for i in range(self.generator.size()):
+                    detections = all_detections[i][label]
+                    annotations = all_annotations[i][label]
+                    num_annotations += annotations.shape[0]
+                    detected_annotations = []
+
+                    for d in detections:
+                        scores = np.append(scores, d[4])
+
+                        if annotations.shape[0] == 0:
+                            false_positives = np.append(false_positives, 1)
+                            true_positives = np.append(true_positives, 0)
+                            continue
+
+                        overlaps = compute_overlap(np.expand_dims(d, axis=0), annotations)
+                        assigned_annotation = np.argmax(overlaps, axis=1)
+                        max_overlap = overlaps[0, assigned_annotation]
+
+                        if max_overlap >= self.iou_threshold and assigned_annotation not in detected_annotations:
+                            false_positives = np.append(false_positives, 0)
+                            true_positives = np.append(true_positives, 1)
+                            detected_annotations.append(assigned_annotation)
+                        else:
+                            false_positives = np.append(false_positives, 1)
+                            true_positives = np.append(true_positives, 0)
+
+                # no annotations -> AP for this class is 0 (is this correct?)
+                if num_annotations == 0:
+                    average_precisions[label] = 0
+                    continue
+
+                # sort by score
+                indices = np.argsort(-scores)
+                false_positives = false_positives[indices]
+                true_positives = true_positives[indices]
+
+                # compute false positives and true positives
+                false_positives = np.cumsum(false_positives)
+                true_positives = np.cumsum(true_positives)
+
+                # compute recall and precision
+                recall = true_positives / num_annotations
+                precision = true_positives / np.maximum(true_positives + false_positives, np.finfo(np.float64).eps)
+
+                # compute average precision
+                average_precision = compute_ap(recall, precision)
+                average_precisions[label] = average_precision
+
+            return average_precisions
 
 
 def dummy_loss(y_true, y_pred):

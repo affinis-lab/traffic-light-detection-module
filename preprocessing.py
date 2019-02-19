@@ -28,11 +28,13 @@ def load_carla_data(path, labels):
     green = 0
     for record in data[1:][data.columns[:7]].values:
         tokens = record[5].split(",")
-        xmin, ymin,xmax,ymax = float(tokens[1].split(":")[1]), float(tokens[2].split(":")[1]), float(tokens[3].split(":")[1]), float(tokens[4].split(":")[1].replace("}", ""))
+
+        xmin, ymin, xmax, ymax = float(tokens[1].split(":")[1]), float(tokens[2].split(":")[1]),\
+                               float(tokens[3].split(":")[1]), float(tokens[4].split(":")[1].replace("}", ""))
 
         #omit small images
-        if xmax <= 15:
-            objects_omitted+=1
+        if xmax < 15:
+            objects_omitted += 1
             continue
 
         xmax += xmin
@@ -57,14 +59,13 @@ def load_carla_data(path, labels):
         else:
             dataset[image_path] = [obj]
 
-    print("Objects omitted: ", objects_omitted)
+    print("Objects omitted", objects_omitted)
     print("Red light: ", red)
     print("Green light: ", green)
 
     instances = []
 
     for key in dataset.keys():
-
         inst = {}
 
         inst['image_path'] = key
@@ -73,6 +74,7 @@ def load_carla_data(path, labels):
         instances.append(inst)
 
     return instances
+
 
 def load_image(path):
     img = cv2.imread(os.path.join(path))

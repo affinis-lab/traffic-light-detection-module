@@ -11,17 +11,17 @@
         "classes":               ["go", "stop"],
         "obj_thresh":            0.20,
         "nms_thresh":            0.01,
-        "saved_model_name":      "model.101-1.84.h5",
-        "obj_scale":             25,
-        "no_obj_scale":          10,
-        "coord_scale":           10,
-        "class_scale":           5
+        "saved_model_name":      "model.09-2.01.h5",
+        "obj_scale":             85,
+        "no_obj_scale":          75,
+        "coord_scale":           70,
+        "class_scale":           70
     },
 
     "plot_model":           true,
 
     "train": {
-        "enabled":              true,
+        "enabled":              false,
         "annot_file_name":      "carla_all.csv",
         "batch_size":           8,
         "learning_rate":        1e-4,
