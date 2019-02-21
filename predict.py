@@ -19,7 +19,7 @@ def get_model(config):
 
 
 def get_model_from_file(config):
-    path = os.path.join(BASE_DIR, config['model']['saved_model_name'])
+    path = os.path.join(BASE_DIR, 'checkpoints', config['model']['saved_model_name'])
     model = load_model(path, custom_objects={'custom_loss': dummy_loss})
     return model
 

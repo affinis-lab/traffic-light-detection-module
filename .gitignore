@@ -30,6 +30,7 @@ dataset/images/*
 !dataset/images/.gitkeep
 *.h5
 *.png
+trainval.json
 checkpoints/*
 
 # PyInstaller
