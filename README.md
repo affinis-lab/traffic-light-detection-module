@@ -2,7 +2,7 @@
 Module for detecting traffic lights in the [CARLA autonomous driving simulator](http://carla.org/)  (version: 0.8.4).
 
 - Model for objection detection is based on tiny yolov2
-- Training started with pretrained weights
+- Training started with yolov2 coco pretrained weights
 - It was first trained on the LISA traffic light detection dataset (~5800 images), and after that on the dataset collected from the CARLA simulator by myself (~1800 images).
 
 
@@ -31,6 +31,7 @@ Module for detecting traffic lights in the [CARLA autonomous driving simulator](
   - Link to model weights
   
 - Several examples of predictions, more can be found in the [out folder](https://github.com/affinis-lab/traffic-light-detection-module/tree/master/out)
+
 ![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
 ![out(11).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out11.png)
 ![out(12).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out12.png)
