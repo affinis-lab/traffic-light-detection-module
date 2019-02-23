@@ -1,4 +1,4 @@
-# traffic-light-module
+# traffic-light-detection-module
 Module for detecting traffic lights in the [CARLA autonomous driving simulator](http://carla.org/)  (version: 0.8.4).
 
 - Model for objection detection is based on tiny yolov2
