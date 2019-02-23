@@ -1,4 +1,7 @@
 # traffic-light-detection-module
+
+![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
+
 Module for detecting traffic lights in the [CARLA autonomous driving simulator](http://carla.org/)  (version: 0.8.4).
 
 - Model for objection detection is based on tiny yolov2
@@ -32,7 +35,6 @@ Module for detecting traffic lights in the [CARLA autonomous driving simulator](
   
 - Several examples of predictions, more can be found in the [out folder](https://github.com/affinis-lab/traffic-light-detection-module/tree/master/out)
 
-![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
 ![out(11).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out11.png)
 ![out(12).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out12.png)
 ![out(6).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out6.png)
