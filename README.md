@@ -2,16 +2,30 @@
 
 ![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
 
+## About
+
 Module for detecting traffic lights in the [CARLA autonomous driving simulator](http://carla.org/)  (version: 0.8.4). <br />
 Built upon and inspired by https://github.com/experiencor/keras-yolo2. <br />
 Instructions and more traffic light detection examples can be found below. <br />
 
+- This module is used along several other [modules](https://github.com/affinis-lab) to implement our version of imitation learning in the CARLA simulator. Results of the [core](https://github.com/affinis-lab/core) module can be found on this [repository](https://github.com/affinis-lab/core)
 
 - Model for objection detection is based on tiny yolov2
+
 - Training started with yolov2 coco pretrained weights
+
 - It was first trained on the LISA traffic light detection dataset (~5800 images), and after that on the dataset collected from the CARLA simulator by myself (~1800 images).
 
+## CARLA dataset and model
 
+- Dataset collected by myself in the CARLA simulator can be found [here](https://drive.google.com/drive/folders/1TXkPLWlNgauPhQnKEoPDZsx7Px1MD9n_?usp=sharing), annotations can be found [here](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/dataset/carla_all.csv). 
+
+- **Important note** - several images in the dataset are left out of annotations because bounding boxes are too small (too far away). I also filtered (left out) all images that have xmax < 15 when loading the dataset. There is around 70-80 out of ~1800 images that are left out, so it isn't that problematic.
+
+- Pretrained model can be found [here](https://drive.google.com/file/d/1FVb6b6axN2WAYePv0_zLyiWDois7PgMZ/view?usp=sharing).
+
+
+## Instructions
 - To train: 
   - In the [config](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/config.json) file set _training_ -> _enabled_ to **true**
   - Put your annotations file in the **dataset** folder
@@ -33,9 +47,8 @@ Instructions and more traffic light detection examples can be found below. <br /
 
 - Soon to be added:
   - Real time traffic light detecting gifs
-  - Link to datasets used
-  - Link to model weights
   
+## Examples
 - Several examples of predictions, more can be found in the [out folder](https://github.com/affinis-lab/traffic-light-detection-module/tree/master/out)
 
 ![out(11).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out11.png)
