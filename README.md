@@ -2,8 +2,11 @@
 
 ![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
 
-# UPDATE
-This repo is deprecated. For a newer and improved model, implemented in PyTorch refer to this [repo](https://github.com/filipbasara0/simple-object-detection/blob/main/README.md#carla-traffic-lights).
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+# IMPORTANT UPDATE
+This repo is deprecated. For a newer and improved model, implemented in PyTorch, please refer to this [repo](https://github.com/filipbasara0/simple-object-detection/blob/main/README.md#carla-traffic-lights).
+
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 
 ## About
 
