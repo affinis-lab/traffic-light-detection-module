@@ -2,6 +2,9 @@
 
 ![out(2).png](https://github.com/affinis-lab/traffic-light-detection-module/blob/master/out/out2.png)
 
+# UPDATE
+This repo is deprecated. For a newer and improved model, implemented in PyTorch refer to this [repo](https://github.com/filipbasara0/simple-object-detection/blob/main/README.md#carla-traffic-lights).
+
 ## About
 
 Module for detecting traffic lights in the [CARLA autonomous driving simulator](http://carla.org/)  (version: 0.8.4). <br />
